@@ -12,42 +12,42 @@ using Microsoft.AspNetCore.Mvc;
 namespace BookStore_API.Controllers
 {
     /// <summary>
-    /// Endpoint to interact with Authors in the BookStore's database.
+    /// Endpoint to interact with Books in the BookStore's database.
     /// </summary>
     [Route("api/[controller]")]
     [ApiController]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public class AuthorsController : ControllerBase
+    public class BooksController : ControllerBase
     {
-        private readonly IAuthorRepository _authorRepository;
+        private readonly IBookRepository _bookRepository;
         private readonly ILoggerService _loggerService;
         private readonly IMapper _mapper;
 
-        public AuthorsController(IAuthorRepository authorRepository, 
+        public BooksController(IBookRepository bookRepository,
             ILoggerService loggerService,
             IMapper mapper)
         {
-            _authorRepository = authorRepository;
+            _bookRepository = bookRepository;
             _loggerService = loggerService;
             _mapper = mapper;
         }
 
         /// <summary>
-        /// Get All Authors
+        /// Get All Books
         /// </summary>
-        /// <returns>List of Authors</returns>
+        /// <returns>List of Books</returns>
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> GetAuthors()
+        public async Task<IActionResult> GetBooks()
         {
             var location = GetControllerActionNames();
             try
             {
-                _loggerService.LogInfo($"{location}: Attempted Get All Authors");
-                var authors = await _authorRepository.FindAll();
-                var response = _mapper.Map<IList<AuthorDTO>>(authors);
-                _loggerService.LogInfo($"{location}: Successfully Got All Authors");
+                _loggerService.LogInfo($"{location}: Attempted To Get All Books");
+                var books = await _bookRepository.FindAll();
+                var response = _mapper.Map<IList<BookDTO>>(books);
+                _loggerService.LogInfo($"{location}: Successfully Got All Books");
                 return Ok(response);
             }
             catch (Exception e)
@@ -57,70 +57,70 @@ namespace BookStore_API.Controllers
         }
 
         /// <summary>
-        /// Get an author by id
+        /// Get a book by id
         /// </summary>
         /// <param name="id"></param>
-        /// <returns>An Author's record</returns>
+        /// <returns>A Book's record</returns>
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetAuthor(int id)
+        public async Task<IActionResult> GetBook(int id)
         {
             var location = GetControllerActionNames();
             try
             {
-                _loggerService.LogInfo($"{location}: Attempted Get Author with id: {id}");
-                var author = await _authorRepository.FindById(id);
-                if (author == null)
+                _loggerService.LogInfo($"{location}: Attempted To Get Book with id: {id}");
+                var book = await _bookRepository.FindById(id);
+                if (book == null)
                 {
-                    _loggerService.LogWarn($"{location}: Author with id: {id} was not found.");
+                    _loggerService.LogWarn($"{location}: Book with id: {id} was not found.");
                     return NotFound();
                 }
-                var response = _mapper.Map<AuthorDTO>(author);
-                _loggerService.LogInfo($"{location}: Successfully Got Author with id: {id}");
+                var response = _mapper.Map<Book>(book);
+                _loggerService.LogInfo($"{location}: Successfully got the book with id: {id}");
                 return Ok(response);
             }
             catch (Exception e)
             {
-                return InternalError($"{location}: {e.Message} - {e.InnerException}");
+                return InternalError($"{location}: {e.Message} - {e.InnerException}"); 
             }
         }
 
         /// <summary>
-        /// Creates An Author
+        /// Creates A Book
         /// </summary>
-        /// <param name="author"></param>
+        /// <param name="book"></param>
         /// <returns></returns>
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> Create([FromBody] AuthorCreateDTO authorDTO)
+        public async Task<IActionResult> Create([FromBody] BookCreateDTO bookDTO)
         {
             var location = GetControllerActionNames();
             try
             {
                 _loggerService.LogInfo($"{location}: Create Attempted.");
-                if (authorDTO == null)
+                if (bookDTO == null)
                 {
                     _loggerService.LogWarn($"{location}: Empty request was submitted.");
                     return BadRequest(ModelState);
                 }
                 if (!ModelState.IsValid)
                 {
-                    _loggerService.LogWarn($"{location}: Author data was incomplete.");
+                    _loggerService.LogWarn($"{location}: Data was incomplete.");
                     return BadRequest(ModelState);
                 }
-                var author = _mapper.Map<Author>(authorDTO);
-                var isSuccess = await _authorRepository.Create(author);
+                var book = _mapper.Map<Book>(bookDTO);
+                var isSuccess = await _bookRepository.Create(book);
                 if (!isSuccess)
                 {
-                    return InternalError($"{location}: Author creation failed");
+                    return InternalError($"{location}: Creation failed");
                 }
                 _loggerService.LogInfo($"{location}: Creation was successful.");
-                _loggerService.LogInfo($"{location}: {author}");
-                return Created("Create", new { author });
+                _loggerService.LogInfo($"{location}: {book}");
+                return Created("Create", new { book });
             }
             catch (Exception e)
             {
@@ -129,38 +129,44 @@ namespace BookStore_API.Controllers
         }
 
         /// <summary>
-        /// Updates An Author
+        /// Updates A Book
         /// </summary>
         /// <param name="id"></param>
-        /// <param name="author"></param>
+        /// <param name="book"></param>
         /// <returns></returns>
         [HttpPut("{id}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> Update(int id, [FromBody] AuthorUpdateDTO authorDTO)
+        public async Task<IActionResult> Update(int id, [FromBody] BookUpdateDTO bookDTO)
         {
             var location = GetControllerActionNames();
             try
             {
-                _loggerService.LogWarn($"{location}: Author with id: {id} update attempted.");
-                if (id < 1 || authorDTO == null || id != authorDTO.Id)
+                _loggerService.LogWarn($"{location}: Update attempted on record with id: {id}.");
+                if (id < 1 || bookDTO == null || id != bookDTO.Id)
                 {
-                    _loggerService.LogWarn($"{location}: Author update failed with bad data.");
+                    _loggerService.LogWarn($"{location}: Update failed with bad data - id: {id}.");
                     return BadRequest();
+                }
+                var isExists = await _bookRepository.isExists(id);
+                if (!isExists)
+                {
+                    _loggerService.LogWarn($"{location}: Failed to retrieve record with id: {id}.");
+                    return NotFound();
                 }
                 if (!ModelState.IsValid)
                 {
-                    _loggerService.LogWarn($"{location}: Author Data was incomplete.");
+                    _loggerService.LogWarn($"{location}: Data was incomplete.");
                     return BadRequest(ModelState);
                 }
-                var author = _mapper.Map<Author>(authorDTO);
-                var isSuccess = await _authorRepository.Update(author);
+                var book = _mapper.Map<Book>(bookDTO);
+                var isSuccess = await _bookRepository.Update(book);
                 if (!isSuccess)
                 {
-                    return InternalError($"{location}: Update operation failed.");
+                    return InternalError($"{location}: Update operation failed for record with id: {id}.");
                 }
-                _loggerService.LogInfo($"{location}: Author with id: {id} sucessfully updated.");
+                _loggerService.LogInfo($"{location}: Record with id: {id} sucessfully updated.");
                 return NoContent();
             }
             catch (Exception e)
@@ -170,7 +176,7 @@ namespace BookStore_API.Controllers
         }
 
         /// <summary>
-        /// Removes An Author
+        /// Removes A Book
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
@@ -184,24 +190,24 @@ namespace BookStore_API.Controllers
             var location = GetControllerActionNames();
             try
             {
-                _loggerService.LogInfo($"{location}: Author with id: {id} delete attempted.");
+                _loggerService.LogInfo($"{location}: Record with id: {id} delete attempted.");
                 if (id < 1)
                 {
-                    _loggerService.LogInfo($"{location}: Author delete failed with bad data");
+                    _loggerService.LogInfo($"{location}: Delete failed with bad data");
                     return BadRequest();
                 }
-                var author = await _authorRepository.FindById(id);
-                if (author == null)
+                var book = await _bookRepository.FindById(id);
+                if (book == null)
                 {
-                    _loggerService.LogInfo($"{location}: Author with id: {id} was not found.");
+                    _loggerService.LogInfo($"{location}: Record with id: {id} was not found.");
                     return NotFound();
                 }
-                var isSuccess = await _authorRepository.Delete(author);
+                var isSuccess = await _bookRepository.Delete(book);
                 if (!isSuccess)
                 {
-                    return InternalError($"{location}: Couldn't delete the author");
+                    return InternalError($"{location}: Couldn't delete the record.");
                 }
-                _loggerService.LogInfo($"{location}: Author with id: {id} successfully deleted.");
+                _loggerService.LogInfo($"{location}: Record with id: {id} successfully deleted.");
                 return NoContent();
             }
             catch (Exception e)
